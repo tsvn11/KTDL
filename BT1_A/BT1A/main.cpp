@@ -1,8 +1,16 @@
-#include <Windows.h>
+﻿#include <Windows.h>
 #include <fstream>
 #include <iostream>
+#include <sstream>
 
 #include "def.h"
+
+vector<ThuocTinh> removeProperty(vector<ThuocTinh> propList, vector<string> removeList); //câu a
+bool isDouble(string str);
+double stringToDouble(string str);
+string doubleToString(double dbl);
+vector<ThuocTinh> MinMax(vector<ThuocTinh> propList); //câu b
+vector<ThuocTinh> zScore(vector<ThuocTinh> propList); //câu c
 
 // When passing char arrays as parameters they must be pointers
 int main(int argc, char* argv[]) {
@@ -83,4 +91,133 @@ int main(int argc, char* argv[]) {
         std::cin.get();
         return 0;
     }
+}
+
+//----------------------------------------------------------------------
+vector<ThuocTinh> removeProperty(vector<ThuocTinh> propList, vector<string> removeList) {
+	vector<ThuocTinh> propList_2 = propList;
+	for (int i = 0; i < removeList.size(); i++) {
+		for (int j = 0; j < propList_2.size(); j++) {
+			if (removeList[i] == propList_2[j].ten) {
+				propList_2.erase(propList_2.begin() + j);
+				break;
+			}
+		}
+	}
+	return propList_2;
+}
+
+//hàm kiểm tra xem string có parse sang double được hay không
+bool isDouble(string str)
+{
+	const char* c = str.c_str();
+	char* endptr = 0;
+	strtod(c, &endptr);
+
+	if (*endptr != '\0' || endptr == str)
+		return false;
+	return true;
+}
+
+//hàm parse string sang double
+double stringToDouble(string str) {
+	return atof(str.c_str());
+}
+
+//hàm parse double sang string; cần #include <sstream>
+string doubleToString(double dbl) {
+	std::ostringstream strs;
+	strs << dbl;
+	std::string str = strs.str();
+	return str;
+}
+
+vector<ThuocTinh> MinMax(vector<ThuocTinh> propList) {
+	vector<ThuocTinh> propList_2 = propList;
+	for (int i = 0; i < propList_2.size(); i++) {
+		double min = 2000000000; //số càng lớn càng tốt, đặt tạm 2 tỷ
+		double max = 0;
+		bool allRowAreDouble = true;
+		//kiểm tra tất cả các dòng dữ liệu trong thuộc tính có hợp lệ hay không (là số và >= 0),
+		//đồng thời tìm giá trị min, max trong thuộc tính (nếu có)
+		//nếu tồn tại dòng không hợp lệ thì bỏ qua thuộc tính này
+		for (int j = 0; j < propList_2[i].data.size(); j++) {
+			if (isDouble(propList_2[i].data[j]) == false) {
+				allRowAreDouble = false;
+				break;
+			}
+			double value = stringToDouble(propList_2[i].data[j]);
+			if (value < 0) {
+				allRowAreDouble = false;
+				break;
+			}
+			if (value > max)
+				max = value;
+			if (value < min)
+				min = value;
+		}
+		//khi tất cả các dòng đều hợp lệ, ta có thể chuẩn hóa
+		if (allRowAreDouble == true)
+		{
+			for (int j = 0; j < propList_2[i].data.size(); j++) {
+				double value = stringToDouble(propList_2[i].data[j]);
+				if (value == min) {
+					propList_2[i].data[j] = doubleToString(0.0);
+				}
+				else {
+					if (value == max) {
+						propList_2[i].data[j] = doubleToString(1.0);
+					}
+					else {
+						propList_2[i].data[j] = doubleToString((value - min) / (max - min));
+					}
+				}
+			}
+		}
+	}
+	return propList_2;
+}
+
+vector<ThuocTinh> zScore(vector<ThuocTinh> propList) {
+	vector<ThuocTinh> propList_2 = propList;
+	for (int i = 0; i < propList_2.size(); i++) {
+		double sum = 0;
+		bool allRowAreDouble = true;
+		//kiểm tra tất cả các dòng dữ liệu trong thuộc tính có hợp lệ hay không (là số và >= 0),
+		//đồng thời tìm giá trị tổng trong thuộc tính (nếu có)
+		//nếu tồn tại dòng không hợp lệ thì bỏ qua thuộc tính này
+		for (int j = 0; j < propList_2[i].data.size(); j++) {
+			if (isDouble(propList_2[i].data[j]) == false) {
+				allRowAreDouble = false;
+				break;
+			}
+			double value = stringToDouble(propList_2[i].data[j]);
+			if (value < 0) {
+				allRowAreDouble = false;
+				break;
+			}
+			sum += value;
+		}
+
+		//khi tất cả các dòng đều hợp lệ
+		if (allRowAreDouble == true)
+		{
+			//tính giá trị trung bình(mean) và độ lệch chuẩn(standard deviation)
+			//công thức: http://www.ieev.org/2009/11/standard-deviation-o-lech-chuan.html
+			double mean = sum / propList_2[i].data.size();
+			double sd = 0;
+			for (int j = 0; j < propList_2[i].data.size(); j++) {
+				double value = stringToDouble(propList_2[i].data[j]);
+				sd += pow(value - mean, 2);
+			}
+			sd /= propList_2[i].data.size();
+			sd = sqrt(sd);
+			//chuẩn hóa z-score
+			for (int j = 0; j < propList_2[i].data.size(); j++) {
+				double value = stringToDouble(propList_2[i].data[j]);
+				propList_2[i].data[j] = doubleToString((value - mean) / sd);
+			}
+		}
+	}
+	return propList_2;
 }
