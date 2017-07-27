@@ -11,6 +11,7 @@ double stringToDouble(string str);
 string doubleToString(double dbl);
 vector<ThuocTinh> MinMax(vector<ThuocTinh> propList); //câu b
 vector<ThuocTinh> zScore(vector<ThuocTinh> propList); //câu c
+vector<ThuocTinh> removeMissingInstance(vector<ThuocTinh> propList, vector<string> removeList); //câu f
 
 // When passing char arrays as parameters they must be pointers
 int main(int argc, char* argv[]) {
@@ -216,6 +217,28 @@ vector<ThuocTinh> zScore(vector<ThuocTinh> propList) {
 			for (int j = 0; j < propList_2[i].data.size(); j++) {
 				double value = stringToDouble(propList_2[i].data[j]);
 				propList_2[i].data[j] = doubleToString((value - mean) / sd);
+			}
+		}
+	}
+	return propList_2;
+}
+
+vector<ThuocTinh> removeMissingInstance(vector<ThuocTinh> propList, vector<string> removeList) {
+	vector<ThuocTinh> propList_2 = propList;
+	//duyệt từng thuộc tính được yêu cầu kiểm tra
+	for (int i = 0; i < removeList.size(); i++) {
+		for (int j = 0; j < propList_2.size(); j++) {
+			if (removeList[i] == propList_2[j].ten) {
+				for (int k = 0; k < propList_2[j].data.size(); k++) {
+					//khi phát hiện thuộc tính có dữ liệu bị thiếu
+					if (propList_2[j].data[k] == "") {
+						//xóa mẫu dữ liệu tại vị trí thiếu trên toàn bộ các thuộc tính
+						for (int p = 0; p < propList_2.size(); p++) {
+							propList_2[p].data.erase(propList_2[p].data.begin() + k);
+						}
+						k--;
+					}
+				}
 			}
 		}
 	}
