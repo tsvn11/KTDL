@@ -2,6 +2,7 @@
 #include <string>
 #include <vector>
 #include <sstream>
+#include <fstream>
 using namespace std;
 
 struct ThuocTinh {
@@ -12,6 +13,7 @@ struct ThuocTinh {
 bool isDouble(string str);
 double stringToDouble(string str);
 string doubleToString(double dbl);
+vector<ThuocTinh> loadTextFile(string path);
 vector<ThuocTinh> removeEmptyRow(vector<ThuocTinh> propList);
 vector<ThuocTinh> removeDuplicate(vector<ThuocTinh> propList);
 vector<ThuocTinh> standardizingArea(vector<ThuocTinh> propList);
@@ -137,4 +139,68 @@ vector<ThuocTinh> standardizingArea(vector<ThuocTinh> propList) {
 		}
 	}
 	return propList_2;
+}
+
+vector<ThuocTinh> loadTextFile(string path) {
+	vector<ThuocTinh> ds;
+	ThuocTinh tt_country, tt_name, tt_longName, tt_foundingDate, tt_population, tt_capital, tt_largestCity, tt_area;
+	tt_country.ten = "country";
+	tt_name.ten = "name";
+	tt_longName.ten = "longName";
+	tt_foundingDate.ten = "foundingDate";
+	tt_population.ten = "population";
+	tt_capital.ten = "capital";
+	tt_largestCity.ten = "largestCity";
+	tt_area.ten = "area";
+	ds.push_back(tt_country);
+	ds.push_back(tt_name);
+	ds.push_back(tt_longName);
+	ds.push_back(tt_foundingDate);
+	ds.push_back(tt_population);
+	ds.push_back(tt_capital);
+	ds.push_back(tt_largestCity);
+	ds.push_back(tt_area);
+
+	ifstream file(path);
+	string str;
+	int country = -1;
+	while (getline(file, str))
+	{
+		int equalSymbolPosition = str.find('=');
+		string propName = str.substr(0, equalSymbolPosition);
+		string propValue = str.substr(equalSymbolPosition + 1);
+
+		if (propName == "country") {
+			country++;
+			if (country > 0) {
+				ds[0].data.push_back("");
+				ds[1].data.push_back("");
+				ds[2].data.push_back("");
+				ds[3].data.push_back("");
+				ds[4].data.push_back("");
+				ds[5].data.push_back("");
+				ds[6].data.push_back("");
+				ds[7].data.push_back("");
+			}
+		}
+		if (country > 0) {
+			if (propName == "country")
+				ds[0].data[country - 1] = propValue;
+			if (propName == "name")
+				ds[1].data[country - 1] = propValue;
+			if (propName == "longName")
+				ds[2].data[country - 1] = propValue;
+			if (propName == "foundingDate")
+				ds[3].data[country - 1] = propValue;
+			if (propName == "population")
+				ds[4].data[country - 1] = propValue;
+			if (propName == "capital")
+				ds[5].data[country - 1] = propValue;
+			if (propName == "largestCity")
+				ds[6].data[country - 1] = propValue;
+			if (propName == "area")
+				ds[7].data[country - 1] = propValue;
+		}
+	}
+	return ds;
 }
