@@ -15,7 +15,7 @@ vector<ThuocTinh> removeMissingInstance(vector<ThuocTinh> propList, vector<strin
 
 // When passing char arrays as parameters they must be pointers
 int main(int argc, char* argv[]) {
-    if (argc < 11) { // Check the value of argc. If not enough parameters have been passed, inform user and exit.
+    if (argc < 7) { // Check the value of argc. If not enough parameters have been passed, inform user and exit.
 		// Inform the user of how to use the program
 		std::cout << "Usage is --in <infile> --out <outdir> --task <a|b|c|d|e|f> --proplist <{id,name}> --bin <number>\n";
 		std::cout << "Task a: Xoa danh sach thuoc tinh\n";
