@@ -2,8 +2,11 @@
 #include <fstream>
 #include <iostream>
 #include <sstream>
-
+#include <math.h>
 #include "def.h"
+#include "NumberDuck.h"
+
+using namespace NumberDuck;
 
 vector<ThuocTinh> removeProperty(vector<ThuocTinh> propList, vector<string> removeList); //câu a
 bool isDouble(string str);
@@ -12,6 +15,9 @@ string doubleToString(double dbl);
 vector<ThuocTinh> MinMax(vector<ThuocTinh> propList); //câu b
 vector<ThuocTinh> zScore(vector<ThuocTinh> propList); //câu c
 vector<ThuocTinh> removeMissingInstance(vector<ThuocTinh> propList, vector<string> removeList); //câu f
+
+vector<ThuocTinh> readDataFromExcel(std::string inputFile); 
+void writeDataToExcel(vector<ThuocTinh> dsThuocTinh, std::string outputFile);
 
 // When passing char arrays as parameters they must be pointers
 int main(int argc, char* argv[]) {
@@ -243,4 +249,100 @@ vector<ThuocTinh> removeMissingInstance(vector<ThuocTinh> propList, vector<strin
 		}
 	}
 	return propList_2;
+}
+
+vector<ThuocTinh> readDataFromExcel(std::string inputFile)
+{
+	vector<ThuocTinh> dsThuocTinh;
+
+	Workbook workbook("");
+	Worksheet* pWorksheet = workbook.GetWorksheetByIndex(0); // chon sheet dau tien
+
+	if (workbook.Load(inputFile.c_str()))
+	{
+		int thuoctinhrong = 0;
+		uint16_t col = 0;
+
+		// Doc tat ca cac ten thuoc tinh,
+		// Neu co 3 ten thuoc tinh rong lien tiep => da doc het thuoc tinh => dung lai
+		while (thuoctinhrong < 3)  
+		{
+			// Lay ten thuoc tinh
+			Cell* pCell_Header = pWorksheet->GetCell(0, col);
+			std::string tenThuocTinh(pCell_Header->GetString());
+			
+			// Neu co 3 ten thuoc tinh rong lien tiep => da doc het thuoc tinh => dung lai
+			if (tenThuocTinh.empty())
+			{
+				thuoctinhrong++;
+				continue;
+			}
+
+			// da co thuoc tinh => dem lai tu dau
+			thuoctinhrong = 0;
+
+			ThuocTinh thuoctinh;
+			thuoctinh.ten = tenThuocTinh; // Luu ten thuoc tinh
+
+			// Bien dem du lieu rong lien tiep
+			int dulieurong = 0;
+			uint16_t row = 1;  // bo qua dong dau tien
+
+			// Doc tat ca du lieu cua thuoc tinh
+			// Neu co 20 du lieu rong lien tiep => da doc het du lieu => dung lai
+			while (dulieurong < 20)
+			{
+				// Lay du lieu
+				Cell* pCell = pWorksheet->GetCell(row, col);
+				std::string dulieu(pCell->GetString());
+
+				// Neu co 20 du lieu rong lien tiep => da doc het du lieu => dung lai
+				if (dulieu.empty())
+				{
+					dulieurong++;
+					continue;
+				}
+
+				// da co du lieu => dem lai tu dau
+				dulieurong = 0;
+
+				// Luu du lieu
+				thuoctinh.data.push_back(dulieu); 
+
+				row++;
+			}
+
+			// Them thuoc tinh vao danh sach
+			dsThuocTinh.push_back(thuoctinh);
+
+			col++;
+		}
+	}
+
+	return dsThuocTinh;
+}
+
+void writeDataToExcel(vector<ThuocTinh> dsThuocTinh, std::string outputFile)
+{
+	Workbook workbook("");
+	Worksheet* pWorksheet = workbook.GetWorksheetByIndex(0); // chon sheet dau tien
+
+	// Duyet qua tat ca cac thuoc tinh
+	for (uint16_t col = 0; col < dsThuocTinh.size(); col++)
+	{
+		// Dong dau tien la ten thuoc tinh
+		Cell* pCell_Header = pWorksheet->GetCell(0, col);
+		pCell_Header->SetString(dsThuocTinh[col].ten.c_str());
+
+		// Ghi tat ca cac dong du lieu trong thuoc tinh 
+		for (uint16_t row = 0; row < dsThuocTinh[col].data.size(); col++) 
+		{
+			// Ghi du lieu vao cell
+			Cell* pCell = pWorksheet->GetCell(row + 1, col); // bo qua dong dau tien chua ten thuoc tinh
+			pCell->SetString(dsThuocTinh[col].data[row].c_str());
+		}
+	}
+
+	// Save lai
+	workbook.Save(outputFile.c_str());
 }
