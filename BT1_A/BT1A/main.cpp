@@ -4,7 +4,7 @@
 #include <sstream>
 #include <math.h>
 #include "def.h"
-#include "NumberDuck.h"
+#include "libs/include/NumberDuck.h"
 
 using namespace NumberDuck;
 
