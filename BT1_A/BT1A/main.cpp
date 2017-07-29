@@ -12,8 +12,12 @@ vector<ThuocTinh> removeProperty(vector<ThuocTinh> propList, vector<string> remo
 bool isDouble(string str);
 double stringToDouble(string str);
 string doubleToString(double dbl);
+bool checkBeforeBinning(ThuocTinh prop);
+void rowSwap(vector<ThuocTinh> &propList, int rowA, int rowB);
+vector<ThuocTinh> sortingAscending(vector<ThuocTinh> propList, int pos);
 vector<ThuocTinh> MinMax(vector<ThuocTinh> propList); //câu b
 vector<ThuocTinh> zScore(vector<ThuocTinh> propList); //câu c
+vector<vector<ThuocTinh>> equalWidthBinning(vector<ThuocTinh> propList, vector<string> processedList, int numberOfBaskets); //câu d
 vector<ThuocTinh> removeMissingInstance(vector<ThuocTinh> propList, vector<string> removeList); //câu f
 
 vector<ThuocTinh> readDataFromExcel(std::string inputFile); 
@@ -151,11 +155,13 @@ vector<ThuocTinh> MinMax(vector<ThuocTinh> propList) {
 		for (int j = 0; j < propList_2[i].data.size(); j++) {
 			if (isDouble(propList_2[i].data[j]) == false) {
 				allRowAreDouble = false;
+				cout << "[Message]: (" << propList_2[i].ten << ") is skipped, because row " << j + 1 << " is not number types" << endl;
 				break;
 			}
 			double value = stringToDouble(propList_2[i].data[j]);
 			if (value < 0) {
 				allRowAreDouble = false;
+				cout << "[Message]: (" << propList_2[i].ten << ") is skipped, because row " << j + 1 << " is < 0" << endl;
 				break;
 			}
 			if (value > max)
@@ -196,11 +202,13 @@ vector<ThuocTinh> zScore(vector<ThuocTinh> propList) {
 		for (int j = 0; j < propList_2[i].data.size(); j++) {
 			if (isDouble(propList_2[i].data[j]) == false) {
 				allRowAreDouble = false;
+				cout << "[Message]: (" << propList_2[i].ten << ") is skipped, because row " << j + 1 << " is not number types" << endl;
 				break;
 			}
 			double value = stringToDouble(propList_2[i].data[j]);
 			if (value < 0) {
 				allRowAreDouble = false;
+				cout << "[Message]: (" << propList_2[i].ten << ") is skipped, because row " << j + 1 << " is < 0" << endl;
 				break;
 			}
 			sum += value;
@@ -251,6 +259,116 @@ vector<ThuocTinh> removeMissingInstance(vector<ThuocTinh> propList, vector<strin
 	return propList_2;
 }
 
+//--- cau d, e ---
+//kiểm tra thuộc tính có hợp lệ hay không (không rỗng, là số) trước khi chia giỏ
+bool checkBeforeBinning(ThuocTinh prop) {
+	for (int i = 0; i < prop.data.size(); i++) {
+		if (prop.data[i] == "") {
+			cout << "[Message]: (" << prop.ten << ") is skipped, because row " << i + 1 << " is NULL" << endl;
+			return false;
+		}
+		if (isDouble(prop.data[i]) == false) {
+			cout << "[Message]: (" << prop.ten << ") is skipped, because row " << i + 1 << " is not number types" << endl;
+			return false;
+		}
+	}
+	return true;
+}
+
+//hàm hoán vị 2 dòng trên tập dữ liệu
+void rowSwap(vector<ThuocTinh> &propList, int rowA, int rowB) {
+	vector<string> tempRow;
+	for (int i = 0; i < propList.size(); i++) {
+		tempRow.push_back(propList[i].data[rowA]);
+		propList[i].data[rowA] = propList[i].data[rowB];
+		propList[i].data[rowB] = tempRow[i];
+	}
+}
+
+//sắp xếp lại dữ liệu dựa theo vị trí thuộc tính được chỉ định pos
+vector<ThuocTinh> sortingAscending(vector<ThuocTinh> propList, int pos) {
+	vector<ThuocTinh> propList_2 = propList;
+	for (int i = 0; i < propList_2[0].data.size() - 1; i++) {
+		for (int j = i + 1; j < propList_2[0].data.size(); j++) {
+			if (stringToDouble(propList_2[pos].data[i]) > stringToDouble(propList_2[pos].data[j])) {
+				rowSwap(propList_2, i, j);
+			}
+		}
+	}
+	return propList_2;
+}
+
+//numberOfBaskets: số lượng giỏ muốn chia
+//phương pháp khử nhiễu được sử dụng: giá trị trung bình giỏ
+vector<vector<ThuocTinh>> equalWidthBinning(vector<ThuocTinh> propList, vector<string> processedList, int numberOfBaskets) {
+	vector<vector<ThuocTinh>> result; //nhiều files, mỗi vector<ThuocTinh> xuất ra 1 file excel
+									  //duyệt từng thuộc tính được yêu cầu chia giỏ
+	for (int i = 0; i < processedList.size(); i++) {
+		for (int j = 0; j < propList.size(); j++) {
+			if (processedList[i] == propList[j].ten) {
+				//kiểm tra thuộc tính có hợp lệ hay không (không rỗng, là số)
+				if (checkBeforeBinning(propList[j]) == false)
+					break;
+				//sắp xếp lại dữ liệu 
+				vector<ThuocTinh> propList_current = sortingAscending(propList, j);
+				double minValue = stringToDouble(propList_current[j].data[0]);
+				double maxValue = stringToDouble(propList_current[j].data[propList_current[0].data.size() - 1]);
+				double width = (maxValue - minValue) / numberOfBaskets;
+				//tính giá trị biên của các giỏ
+				vector<double> boundaryValue;
+				for (int b = 0; b <= numberOfBaskets; b++) {
+					boundaryValue.push_back(minValue + (width*b));
+				}
+				//tính giá trị trung bình của từng giỏ
+				vector<double> sumOfEachBasket;
+				vector<int> coutOfEachBasket;
+				for (int bas = 0; bas < numberOfBaskets; bas++) {
+					sumOfEachBasket.push_back(0);
+					coutOfEachBasket.push_back(0);
+				}
+				for (int line = 0; line < propList_current[0].data.size(); line++) {
+					//duyệt ngược từ biên cao xuống thấp để xác định vị trí giỏ của giá trị
+					for (int bas = numberOfBaskets - 1; bas >= 0; bas--) {
+						double val = stringToDouble(propList_current[j].data[line]);
+						if (val >= boundaryValue[bas]) {
+							sumOfEachBasket[bas] += val;
+							coutOfEachBasket[bas]++;
+							break;
+						}
+					}
+				}
+				vector<double> meanOfEachBasket;
+				for (int bas = 0; bas < numberOfBaskets; bas++) {
+					if (coutOfEachBasket[bas] == 0) {
+						meanOfEachBasket.push_back(0);
+					}
+					else {
+						meanOfEachBasket.push_back(sumOfEachBasket[bas] / coutOfEachBasket[bas]);
+					}
+				}
+				//sắp xếp các giá trị vào giỏ phù hợp và làm trơn bằng giá trị trung bình giỏ
+				for (int line = 0; line < propList_current[0].data.size(); line++) {
+					//xác định giỏ phù hợp
+					for (int bas = 0; bas < numberOfBaskets; bas++) {
+						int idx = 0;
+						idx += coutOfEachBasket[bas];
+						for (int beforeBas = 0; beforeBas < bas; beforeBas++) {
+							idx += coutOfEachBasket[beforeBas];
+						}
+						if (line < idx) {
+							propList_current[j].data[line] = doubleToString(meanOfEachBasket[bas]);
+							break;
+						}
+					}
+				}
+				result.push_back(propList_current);
+			}
+		}
+	}
+	return result;
+}
+
+//----------------
 vector<ThuocTinh> readDataFromExcel(std::string inputFile)
 {
 	vector<ThuocTinh> dsThuocTinh;
