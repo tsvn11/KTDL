@@ -3,6 +3,7 @@
 #include <vector>
 #include <sstream>
 #include <fstream>
+
 using namespace std;
 
 struct ThuocTinh {
@@ -10,16 +11,56 @@ struct ThuocTinh {
 	vector<string> data;
 };
 
+bool fileExists(string fileName);
 bool isDouble(string str);
 double stringToDouble(string str);
 string doubleToString(double dbl);
+void printData(vector<ThuocTinh> propList);
 vector<ThuocTinh> loadTextFile(string path);
 vector<ThuocTinh> removeEmptyRow(vector<ThuocTinh> propList);
 vector<ThuocTinh> removeDuplicate(vector<ThuocTinh> propList);
 vector<ThuocTinh> standardizingArea(vector<ThuocTinh> propList);
+void writeDataToExcel(vector<ThuocTinh> dsThuocTinh, std::string outputFile);
 
-int main() {
+int main(int argc, char* argv[]) {
+	if (argc != 5) {
+		std::cout << "Usage is --in <infile> --out <outfile>";
+		std::cin.get();
+		exit(0);
+	}
 
+	std::string inFile, outFile;
+	for (int i = 1; i < argc; i++) {
+		if (i + 1 != argc) // Check that we haven't finished parsing already
+			if (strcmp(argv[i], "--in") == 0) {
+				// We know the next argument *should* be the filename:
+				inFile = argv[i + 1];
+			}
+			else if (strcmp(argv[i], "--out") == 0) {
+				outFile = argv[i + 1];
+			}
+	}
+	if (fileExists(inFile) == false) {
+		std::cout << inFile << " not found" << endl;
+		std::cin.get();
+		exit(0);
+	}
+	if (fileExists(outFile) == true) {
+		std::cout << outFile << " already exists" << endl;
+		std::cin.get();
+		exit(0);
+	}
+
+	cout << "Please wait..." << endl;
+	vector<ThuocTinh> ds = loadTextFile(inFile);
+	vector<ThuocTinh> ds_2 = removeEmptyRow(ds);
+	vector<ThuocTinh> ds_3 = removeDuplicate(ds_2);
+	vector<ThuocTinh> ds_4 = standardizingArea(ds_3);
+	writeDataToExcel(ds_4, outFile + ".xls");
+	//hiện tại chưa tìm được thư viện hỗ trợ ghi excel nên lưu tạm bằng xls
+	//lưu bằng xlsx thì sẽ mở không được
+	cout << "Done!" << endl;
+	system("pause");
 	return 0;
 }
 
@@ -141,6 +182,16 @@ vector<ThuocTinh> standardizingArea(vector<ThuocTinh> propList) {
 	return propList_2;
 }
 
+void printData(vector<ThuocTinh> propList) {
+	for (int i = 0; i < propList.size(); i++) {
+		cout << "[" << propList[i].ten << "][" << propList[i].data.size() << "]:" << endl;
+		for (int j = 0; j < propList[i].data.size(); j++) {
+			cout << propList[i].data[j] << ", ";
+		}
+		cout << endl;
+	}
+}
+
 vector<ThuocTinh> loadTextFile(string path) {
 	vector<ThuocTinh> ds;
 	ThuocTinh tt_country, tt_name, tt_longName, tt_foundingDate, tt_population, tt_capital, tt_largestCity, tt_area;
@@ -169,7 +220,6 @@ vector<ThuocTinh> loadTextFile(string path) {
 		int equalSymbolPosition = str.find('=');
 		string propName = str.substr(0, equalSymbolPosition);
 		string propValue = str.substr(equalSymbolPosition + 1);
-
 		if (propName == "country") {
 			country++;
 			if (country > 0) {
@@ -203,4 +253,26 @@ vector<ThuocTinh> loadTextFile(string path) {
 		}
 	}
 	return ds;
+}
+
+bool fileExists(string fileName) {
+	if (std::ifstream(fileName))
+		return true;
+	return false;
+}
+
+void writeDataToExcel(vector<ThuocTinh> dsThuocTinh, std::string outputFile)
+{
+	ofstream newFile(outputFile);
+	for (int i = 0; i < dsThuocTinh.size(); i++) {
+		newFile << dsThuocTinh[i].ten << "\t";
+	}
+	newFile << "\n";
+	for (int i = 0; i < dsThuocTinh[0].data.size(); i++) {
+		for (int j = 0; j < dsThuocTinh.size(); j++) {
+			newFile << dsThuocTinh[j].data[i] << "\t";
+		}
+		newFile << "\n";
+	}
+	newFile.close();
 }
