@@ -18,6 +18,7 @@ vector<ThuocTinh> sortingAscending(vector<ThuocTinh> propList, int pos);
 vector<ThuocTinh> MinMax(vector<ThuocTinh> propList); //câu b
 vector<ThuocTinh> zScore(vector<ThuocTinh> propList); //câu c
 vector<vector<ThuocTinh>> equalWidthBinning(vector<ThuocTinh> propList, vector<string> processedList, int numberOfBaskets); //câu d
+vector<vector<ThuocTinh>> equalDepthBinning(vector<ThuocTinh> propList, vector<string> processedList, int depth); //câu e
 vector<ThuocTinh> removeMissingInstance(vector<ThuocTinh> propList, vector<string> removeList); //câu f
 
 vector<ThuocTinh> readDataFromExcel(std::string inputFile); 
@@ -368,6 +369,51 @@ vector<vector<ThuocTinh>> equalWidthBinning(vector<ThuocTinh> propList, vector<s
 	return result;
 }
 
+//depth: độ sâu giỏ muốn chia
+//phương pháp khử nhiễu được sử dụng: giá trị trung bình giỏ
+vector<vector<ThuocTinh>> equalDepthBinning(vector<ThuocTinh> propList, vector<string> processedList, int depth) {
+	vector<vector<ThuocTinh>> result; //nhiều files, mỗi vector<ThuocTinh> xuất ra 1 file excel
+									  //duyệt từng thuộc tính được yêu cầu chia giỏ
+	for (int i = 0; i < processedList.size(); i++) {
+		for (int j = 0; j < propList.size(); j++) {
+			if (processedList[i] == propList[j].ten) {
+				//kiểm tra thuộc tính có hợp lệ hay không (không rỗng, là số)
+				if (checkBeforeBinning(propList[j]) == false)
+					break;
+				//sắp xếp lại dữ liệu 
+				vector<ThuocTinh> propList_current = sortingAscending(propList, j);
+				//tính số lượng giỏ
+				int numberOfBaskets = propList_current[0].data.size() / depth;
+				if (propList_current[0].data.size() % depth != 0)
+					numberOfBaskets++;
+				//tính giá trị trung bình của từng giỏ
+				vector<double> sumOfEachBasket;
+				vector<int> coutOfEachBasket;
+				for (int bas = 0; bas < numberOfBaskets; bas++) {
+					sumOfEachBasket.push_back(0);
+					coutOfEachBasket.push_back(0);
+				}
+				//duyệt từ đầu đến cuối để xác định vị trí giỏ của giá trị
+				for (int line = 0; line < propList_current[0].data.size(); line++) {
+					int bas_pos = line / depth;
+					sumOfEachBasket[bas_pos] += stringToDouble(propList_current[j].data[line]);
+					coutOfEachBasket[bas_pos]++;
+				}
+				vector<double> meanOfEachBasket;
+				for (int bas = 0; bas < numberOfBaskets; bas++) {
+					meanOfEachBasket.push_back(sumOfEachBasket[bas] / coutOfEachBasket[bas]);
+				}
+				//sắp xếp các giá trị vào giỏ phù hợp và làm trơn bằng giá trị trung bình giỏ
+				for (int line = 0; line < propList_current[0].data.size(); line++) {
+					int bas_pos = line / depth;
+					propList_current[j].data[line] = doubleToString(meanOfEachBasket[bas_pos]);
+				}
+				result.push_back(propList_current);
+			}
+		}
+	}
+	return result;
+}
 //----------------
 vector<ThuocTinh> readDataFromExcel(std::string inputFile)
 {
