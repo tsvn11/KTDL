@@ -41,7 +41,7 @@
 			<Tool
 				Name="VCCLCompilerTool"
 				Optimization="0"
-				AdditionalIncludeDirectories="libs\include"
+				AdditionalIncludeDirectories="libs\include;libs\include\include_cpp"
 				PreprocessorDefinitions="WIN32;_DEBUG;_CONSOLE"
 				MinimalRebuild="true"
 				BasicRuntimeChecks="3"
@@ -61,7 +61,7 @@
 			/>
 			<Tool
 				Name="VCLinkerTool"
-				AdditionalDependencies="LibXlsxWriter.lib"
+				AdditionalDependencies="LibXlsxWriter.lib libxl.lib"
 				LinkIncremental="2"
 				AdditionalLibraryDirectories="libs\lib"
 				GenerateDebugInformation="true"
@@ -117,7 +117,7 @@
 				Name="VCCLCompilerTool"
 				Optimization="2"
 				EnableIntrinsicFunctions="true"
-				AdditionalIncludeDirectories="libs\include"
+				AdditionalIncludeDirectories="libs\include;libs\include\include_cpp"
 				PreprocessorDefinitions="WIN32;NDEBUG;_CONSOLE"
 				RuntimeLibrary="2"
 				EnableFunctionLevelLinking="true"
@@ -136,7 +136,7 @@
 			/>
 			<Tool
 				Name="VCLinkerTool"
-				AdditionalDependencies="LibXlsxWriter.lib"
+				AdditionalDependencies="LibXlsxWriter.lib libxl.lib"
 				LinkIncremental="1"
 				AdditionalLibraryDirectories="libs\lib"
 				GenerateDebugInformation="true"

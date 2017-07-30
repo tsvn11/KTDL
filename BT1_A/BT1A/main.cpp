@@ -6,6 +6,9 @@
 #include "def.h"
 
 #include "xlsxwriter.h"
+#include "libxl.h"
+
+using namespace libxl;
 
 vector<string> splitProperty(string str);
 vector<ThuocTinh> removeProperty(vector<ThuocTinh> propList, vector<string> removeList); //câu a
@@ -24,6 +27,27 @@ vector<ThuocTinh> removeMissingInstance(vector<ThuocTinh> propList, vector<strin
 
 bool readDataFromExcel(vector<ThuocTinh> &dsThuocTinh, std::string inputFile); 
 bool writeDataToExcel(vector<ThuocTinh> dsThuocTinh, std::string outputFile);
+
+void InitLibrary();
+bool endOfRow(uint16_t row, uint16_t col);
+bool cellEmpty(uint16_t row, uint16_t col);
+const wchar_t* getDataCell(uint16_t row, uint16_t col);
+
+
+std::string  WideToMB(const std::wstring& str, UINT codePage = CP_ACP);
+std::wstring MBToWide(const std::string& str,  UINT codePage = CP_ACP);
+
+std::string  WideToUTF8(const std::wstring& str) { return WideToMB(str, CP_UTF8); }
+std::wstring UTF8ToWide(const std::string& str)  { return MBToWide(str, CP_UTF8); }
+
+std::string ANSIToUTF8(const std::string& str, UINT codePage = CP_ACP) { return WideToUTF8(MBToWide(str, codePage)); }
+std::string UTF8ToANSI(const std::string& str, UINT codePage = CP_ACP) { return WideToMB(UTF8ToWide(str), codePage); }
+
+Book*			g_pBook = NULL;
+Sheet*			g_pSheet = NULL;
+unsigned int	g_nCountGetData = 0;
+std::string		g_sInputFile = "";
+std::string		g_sOutputFile = "";
 
 // When passing char arrays as parameters they must be pointers
 int main(int argc, char* argv[]) {
@@ -107,12 +131,15 @@ int main(int argc, char* argv[]) {
 		/* Read input file */
 		vector<ThuocTinh> dsThuocTinh;
 
-		//if (!readDataFromExcel(dsThuocTinh, inFile))
-		//{
-		//	std::cout << "Read file error \n";
-		//	std::cin.get();
-		//	exit(0);
-		//}
+		g_sInputFile = inFile;
+		g_sOutputFile = outFile;
+
+		if (!readDataFromExcel(dsThuocTinh, inFile))
+		{
+			std::cout << "Read file error \n";
+			std::cin.get();
+			exit(0);
+		}
 
 		/* Execute task */
 		if (taskName.compare("a") == 0)
@@ -502,7 +529,61 @@ vector<vector<ThuocTinh>> equalDepthBinning(vector<ThuocTinh> propList, vector<s
 
 bool readDataFromExcel(vector<ThuocTinh> &dsThuocTinh, std::string inputFile)
 {
-	return false;
+	g_pBook = xlCreateXMLBook();
+
+	if (g_pBook == NULL)
+		return false;
+
+	if (g_pBook->load(UTF8ToWide(inputFile).c_str()))
+	{
+		g_pSheet = g_pBook->getSheet(0);
+
+		if (g_pSheet)
+		{
+			uint16_t col = 0;
+
+			// Doc tat ca cac ten thuoc tinh,
+			while (!cellEmpty(0 + 1, col))   // Ban TRIAL bo qua dong dau tien
+			{
+				// Lay ten thuoc tinh
+				const wchar_t* buffer = getDataCell(0 + 1, col); // Ban TRIAL bo qua dong dau tien
+				std::wstring wbuffer(buffer);
+
+				ThuocTinh thuoctinh;
+				thuoctinh.ten = WideToUTF8(wbuffer); // Luu ten thuoc tinh
+
+				uint16_t row = 1 + 1;  // bo qua dong dau tien chua header // Ban TRIAL bo qua dong dau tien
+
+				// Doc den dong cuoi cung
+				while (!endOfRow(row, col))
+				{
+					// Lay du lieu
+					const wchar_t* buffer2 = getDataCell(row, col);
+
+					// Du lieu rong
+					if (buffer2 == NULL)
+						buffer2 = L"";
+
+					std::wstring wbuffer2(buffer2);
+					std::string dulieu(WideToUTF8(wbuffer2));
+
+					// Luu du lieu
+					thuoctinh.data.push_back(dulieu); 
+
+					row++;
+				}
+
+				// Them thuoc tinh vao danh sach
+				dsThuocTinh.push_back(thuoctinh);
+
+				col++;
+			}
+		}
+	}
+
+	g_pBook->release();
+
+	return true;
 }
 
 bool writeDataToExcel(vector<ThuocTinh> dsThuocTinh, std::string outputFile)
@@ -535,4 +616,128 @@ bool writeDataToExcel(vector<ThuocTinh> dsThuocTinh, std::string outputFile)
 	workbook_close(workbook);
 
 	return true;
+}
+
+std::string WideToMB(const std::wstring& str, UINT codePage /*= CP_ACP*/)
+{
+	std::string ret;
+	if(str.length() > 0)
+	{
+		DWORD mbChars = WideCharToMultiByte(codePage, 0, str.c_str(), -1, NULL, 0, NULL, NULL);
+		_ASSERTE(mbChars > 0);
+		if(mbChars > 0)
+		{
+			char* buf = new char[mbChars];
+			_ASSERTE( buf != NULL );
+			if( buf != NULL )
+			{
+				ZeroMemory(buf, mbChars);
+
+				DWORD charsConverted = WideCharToMultiByte(codePage, 0, str.c_str(), -1, buf, mbChars, NULL, NULL);
+				_ASSERTE( charsConverted > 0 );
+				_ASSERTE( charsConverted <= mbChars );
+
+				buf[mbChars - 1] = 0;
+				ret = buf;
+
+				delete[] buf;
+			}
+		}
+	}
+	return ret;
+}
+
+std::wstring MBToWide(const std::string& str, UINT codePage /*= CP_ACP*/)
+{
+	std::wstring ret;
+	if(str.length() > 0)
+	{
+		DWORD wChars = MultiByteToWideChar(codePage, 0, str.c_str(), -1, NULL, 0);
+		_ASSERTE(wChars > 0);
+		if(wChars > 0)
+		{
+			wchar_t* buf = new wchar_t[wChars];
+			_ASSERTE( buf != NULL );
+			if( buf != NULL )
+			{
+				size_t bytesNeeded = sizeof(wchar_t)*wChars;
+				ZeroMemory(buf, bytesNeeded);
+
+				DWORD charsConverted = MultiByteToWideChar(codePage, 0, str.c_str(), -1, buf, wChars);
+				_ASSERTE( charsConverted > 0 );
+				_ASSERTE( charsConverted <= wChars );
+
+				buf[wChars - 1] = 0;
+				ret = buf;
+
+				delete[] buf;
+			}
+		}
+	}
+	return ret;
+}
+
+// Kiem tra da den cuoi file chua
+// Neu co 20 dong du lieu rong lien tiep => da doc het du lieu => dung lai
+bool endOfRow(uint16_t row, uint16_t col)
+{
+	int count = 0;
+
+	while(count < 20)
+	{
+		if (!cellEmpty(row, col))
+			return false;
+
+		row++;
+		count++;
+	}
+
+	return true;
+}
+
+// Kiem tra cell rong 
+bool cellEmpty(uint16_t row, uint16_t col)
+{
+	if (getDataCell(row, col))
+	{
+		return false;
+	}
+
+	return true;
+}
+
+/* Khoi tao lai library */
+void InitLibrary()
+{
+	if (g_pBook)
+	{
+		g_pBook->release();
+	}
+
+	g_pBook = xlCreateXMLBook();
+
+	if (g_pBook == NULL)
+		return;
+
+	if (g_pBook->load(UTF8ToWide(g_sInputFile).c_str()))
+	{
+		g_pSheet = g_pBook->getSheet(0);
+	}
+}
+
+const wchar_t* getDataCell(uint16_t row, uint16_t col)
+{
+	g_nCountGetData++;
+
+	// CHEAT: Lay data duoc 280 lan thi reset (300 lan la toi da)
+	if (g_nCountGetData == 280)
+	{
+		InitLibrary();
+		g_nCountGetData = 0;
+	}
+
+	if (row < 0 || col < 0)
+		return NULL;
+
+	return g_pSheet->readStr(row, col);
 }
