@@ -4,9 +4,8 @@
 #include <sstream>
 #include <math.h>
 #include "def.h"
-#include "libs/include/NumberDuck.h"
 
-using namespace NumberDuck;
+#include "xlsxwriter.h"
 
 vector<string> splitProperty(string str);
 vector<ThuocTinh> removeProperty(vector<ThuocTinh> propList, vector<string> removeList); //câu a
@@ -23,11 +22,15 @@ vector<vector<ThuocTinh>> equalWidthBinning(vector<ThuocTinh> propList, vector<s
 vector<vector<ThuocTinh>> equalDepthBinning(vector<ThuocTinh> propList, vector<string> processedList, int depth); //câu e
 vector<ThuocTinh> removeMissingInstance(vector<ThuocTinh> propList, vector<string> removeList); //câu f
 
-vector<ThuocTinh> readDataFromExcel(std::string inputFile);
-void writeDataToExcel(vector<ThuocTinh> dsThuocTinh, std::string outputFile);
+bool readDataFromExcel(vector<ThuocTinh> &dsThuocTinh, std::string inputFile); 
+bool writeDataToExcel(vector<ThuocTinh> dsThuocTinh, std::string outputFile);
 
 // When passing char arrays as parameters they must be pointers
 int main(int argc, char* argv[]) {
+
+	//switch Windows console to UTF-8
+	SetConsoleOutputCP(CP_UTF8);
+
 	if (argc < 7) { // Check the value of argc. If not enough parameters have been passed, inform user and exit.
 					// Inform the user of how to use the program
 		std::cout << "Usage is --in <infile> --out <outdir> --task <a|b|c|d|e|f> --proplist <{id,name}> --bin <number>\n";
@@ -98,8 +101,18 @@ int main(int argc, char* argv[]) {
 			}
 		}
 
-		/* Read input file */
 
+        //... some more code
+
+		/* Read input file */
+		vector<ThuocTinh> dsThuocTinh;
+
+		//if (!readDataFromExcel(dsThuocTinh, inFile))
+		//{
+		//	std::cout << "Read file error \n";
+		//	std::cin.get();
+		//	exit(0);
+		//}
 
 		/* Execute task */
 		if (taskName.compare("a") == 0)
@@ -135,6 +148,12 @@ int main(int argc, char* argv[]) {
 
 
 		/* Write output file */
+		if (!writeDataToExcel(dsThuocTinh, outFile))
+		{
+			std::cout << "write file error \n";
+			std::cin.get();
+			exit(0);
+		}
 
 
 		std::cin.get();
@@ -480,99 +499,40 @@ vector<vector<ThuocTinh>> equalDepthBinning(vector<ThuocTinh> propList, vector<s
 	}
 	return result;
 }
-//----------------
-vector<ThuocTinh> readDataFromExcel(std::string inputFile)
+
+bool readDataFromExcel(vector<ThuocTinh> &dsThuocTinh, std::string inputFile)
 {
-	vector<ThuocTinh> dsThuocTinh;
-
-	Workbook workbook("");
-	Worksheet* pWorksheet = workbook.GetWorksheetByIndex(0); // chon sheet dau tien
-
-	if (workbook.Load(inputFile.c_str()))
-	{
-		int thuoctinhrong = 0;
-		uint16_t col = 0;
-
-		// Doc tat ca cac ten thuoc tinh,
-		// Neu co 3 ten thuoc tinh rong lien tiep => da doc het thuoc tinh => dung lai
-		while (thuoctinhrong < 3)
-		{
-			// Lay ten thuoc tinh
-			Cell* pCell_Header = pWorksheet->GetCell(0, col);
-			std::string tenThuocTinh(pCell_Header->GetString());
-
-			// Neu co 3 ten thuoc tinh rong lien tiep => da doc het thuoc tinh => dung lai
-			if (tenThuocTinh.empty())
-			{
-				thuoctinhrong++;
-				continue;
-			}
-
-			// da co thuoc tinh => dem lai tu dau
-			thuoctinhrong = 0;
-
-			ThuocTinh thuoctinh;
-			thuoctinh.ten = tenThuocTinh; // Luu ten thuoc tinh
-
-										  // Bien dem du lieu rong lien tiep
-			int dulieurong = 0;
-			uint16_t row = 1;  // bo qua dong dau tien
-
-							   // Doc tat ca du lieu cua thuoc tinh
-							   // Neu co 20 du lieu rong lien tiep => da doc het du lieu => dung lai
-			while (dulieurong < 20)
-			{
-				// Lay du lieu
-				Cell* pCell = pWorksheet->GetCell(row, col);
-				std::string dulieu(pCell->GetString());
-
-				// Neu co 20 du lieu rong lien tiep => da doc het du lieu => dung lai
-				if (dulieu.empty())
-				{
-					dulieurong++;
-					continue;
-				}
-
-				// da co du lieu => dem lai tu dau
-				dulieurong = 0;
-
-				// Luu du lieu
-				thuoctinh.data.push_back(dulieu);
-
-				row++;
-			}
-
-			// Them thuoc tinh vao danh sach
-			dsThuocTinh.push_back(thuoctinh);
-
-			col++;
-		}
-	}
-
-	return dsThuocTinh;
+	return false;
 }
 
-void writeDataToExcel(vector<ThuocTinh> dsThuocTinh, std::string outputFile)
+bool writeDataToExcel(vector<ThuocTinh> dsThuocTinh, std::string outputFile)
 {
-	Workbook workbook("");
-	Worksheet* pWorksheet = workbook.GetWorksheetByIndex(0); // chon sheet dau tien
+	lxw_workbook  *workbook  = workbook_new(outputFile.c_str());
 
-															 // Duyet qua tat ca cac thuoc tinh
+	if (workbook == NULL)
+		return false;
+
+	lxw_worksheet *worksheet = workbook_add_worksheet(workbook, NULL);
+
+	if (worksheet == NULL)
+		return false;
+
+	// Duyet qua tat ca cac thuoc tinh
 	for (uint16_t col = 0; col < dsThuocTinh.size(); col++)
 	{
 		// Dong dau tien la ten thuoc tinh
-		Cell* pCell_Header = pWorksheet->GetCell(0, col);
-		pCell_Header->SetString(dsThuocTinh[col].ten.c_str());
+		worksheet_write_string(worksheet, 0, col, dsThuocTinh[col].ten.c_str(), NULL);
 
 		// Ghi tat ca cac dong du lieu trong thuoc tinh 
-		for (uint16_t row = 0; row < dsThuocTinh[col].data.size(); col++)
+
+		for (uint16_t row = 0; row < dsThuocTinh[col].data.size(); row++) 
 		{
-			// Ghi du lieu vao cell
-			Cell* pCell = pWorksheet->GetCell(row + 1, col); // bo qua dong dau tien chua ten thuoc tinh
-			pCell->SetString(dsThuocTinh[col].data[row].c_str());
+			// Ghi du lieu vao cell, bo qua dong header
+			worksheet_write_string(worksheet, row + 1, col, dsThuocTinh[col].data[row].c_str(), NULL);
 		}
 	}
 
-	// Save lai
-	workbook.Save(outputFile.c_str());
+	workbook_close(workbook);
+
+	return true;
 }
