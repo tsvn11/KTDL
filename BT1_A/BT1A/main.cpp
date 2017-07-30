@@ -29,7 +29,7 @@ bool readDataFromExcel(vector<ThuocTinh> &dsThuocTinh, std::string inputFile);
 bool writeDataToExcel(vector<ThuocTinh> dsThuocTinh, std::string outputFile);
 
 void InitLibrary();
-bool endOfRow(uint16_t row, uint16_t col);
+bool endOfRow(uint16_t row, uint16_t col_max);
 bool cellEmpty(uint16_t row, uint16_t col);
 const wchar_t* getDataCell(uint16_t row, uint16_t col);
 
@@ -534,51 +534,67 @@ bool readDataFromExcel(vector<ThuocTinh> &dsThuocTinh, std::string inputFile)
 	if (g_pBook == NULL)
 		return false;
 
-	if (g_pBook->load(UTF8ToWide(inputFile).c_str()))
+	if (!g_pBook->load(UTF8ToWide(inputFile).c_str()))
 	{
-		g_pSheet = g_pBook->getSheet(0);
+		return false;
+	}
 
-		if (g_pSheet)
+	g_pSheet = g_pBook->getSheet(0);
+
+	if (g_pSheet == NULL)
+	{
+		return false;
+	}
+
+	uint16_t col = 0;
+
+	// Doc tat ca cac ten thuoc tinh,
+	while (!cellEmpty(0 + 1, col))   // Ban TRIAL bo qua dong dau tien
+	{
+		// Lay ten thuoc tinh
+		const wchar_t* buffer = getDataCell(0 + 1, col); // Ban TRIAL bo qua dong dau tien
+		std::wstring wbuffer(buffer);
+
+		ThuocTinh thuoctinh;
+		thuoctinh.ten = WideToUTF8(wbuffer); // Luu ten thuoc tinh
+
+		// Them thuoc tinh vao danh sach
+		dsThuocTinh.push_back(thuoctinh);
+
+		col++;
+	}
+
+	col = 0;
+	uint16_t col_max = dsThuocTinh.size();
+	uint16_t row = 1 + 1;  // bo qua dong dau tien chua header // Ban TRIAL bo qua dong dau tien
+
+	// Doc den dong cuoi cung
+	while (!endOfRow(row, col_max))
+	{
+		// Lay du lieu
+		const wchar_t* buffer2 = getDataCell(row, col);
+
+		// Du lieu rong
+		if (buffer2 == NULL)
+			buffer2 = L"";
+
+		std::wstring wbuffer2(buffer2);
+		std::string dulieu(WideToUTF8(wbuffer2));
+
+		// Luu du lieu
+		dsThuocTinh[col].data.push_back(dulieu); 
+
+		// Doc het 1 hang
+		if (col < col_max - 1)
 		{
-			uint16_t col = 0;
-
-			// Doc tat ca cac ten thuoc tinh,
-			while (!cellEmpty(0 + 1, col))   // Ban TRIAL bo qua dong dau tien
-			{
-				// Lay ten thuoc tinh
-				const wchar_t* buffer = getDataCell(0 + 1, col); // Ban TRIAL bo qua dong dau tien
-				std::wstring wbuffer(buffer);
-
-				ThuocTinh thuoctinh;
-				thuoctinh.ten = WideToUTF8(wbuffer); // Luu ten thuoc tinh
-
-				uint16_t row = 1 + 1;  // bo qua dong dau tien chua header // Ban TRIAL bo qua dong dau tien
-
-				// Doc den dong cuoi cung
-				while (!endOfRow(row, col))
-				{
-					// Lay du lieu
-					const wchar_t* buffer2 = getDataCell(row, col);
-
-					// Du lieu rong
-					if (buffer2 == NULL)
-						buffer2 = L"";
-
-					std::wstring wbuffer2(buffer2);
-					std::string dulieu(WideToUTF8(wbuffer2));
-
-					// Luu du lieu
-					thuoctinh.data.push_back(dulieu); 
-
-					row++;
-				}
-
-				// Them thuoc tinh vao danh sach
-				dsThuocTinh.push_back(thuoctinh);
-
-				col++;
-			}
+			col++;
 		}
+		else
+		{
+			col = 0;
+			row++;
+		}
+
 	}
 
 	g_pBook->release();
@@ -678,18 +694,17 @@ std::wstring MBToWide(const std::string& str, UINT codePage /*= CP_ACP*/)
 }
 
 // Kiem tra da den cuoi file chua
-// Neu co 20 dong du lieu rong lien tiep => da doc het du lieu => dung lai
-bool endOfRow(uint16_t row, uint16_t col)
+// Neu co 1 dong trong la het file
+bool endOfRow(uint16_t row, uint16_t col_max)
 {
-	int count = 0;
+	int col = 0;
 
-	while(count < 20)
+	while(col < col_max)
 	{
 		if (!cellEmpty(row, col))
 			return false;
 
-		row++;
-		count++;
+		col++;
 	}
 
 	return true;
