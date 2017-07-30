@@ -3,6 +3,7 @@
 #include <vector>
 #include <sstream>
 #include <fstream>
+#include "libs/include/xlsxwriter.h"
 
 using namespace std;
 
@@ -20,7 +21,7 @@ vector<ThuocTinh> loadTextFile(string path);
 vector<ThuocTinh> removeEmptyRow(vector<ThuocTinh> propList);
 vector<ThuocTinh> removeDuplicate(vector<ThuocTinh> propList);
 vector<ThuocTinh> standardizingArea(vector<ThuocTinh> propList);
-void writeDataToExcel(vector<ThuocTinh> dsThuocTinh, std::string outputFile);
+bool writeDataToExcel(vector<ThuocTinh> dsThuocTinh, std::string outputFile);
 
 int main(int argc, char* argv[]) {
 	if (argc != 5) {
@@ -56,10 +57,14 @@ int main(int argc, char* argv[]) {
 	vector<ThuocTinh> ds_2 = removeEmptyRow(ds);
 	vector<ThuocTinh> ds_3 = removeDuplicate(ds_2);
 	vector<ThuocTinh> ds_4 = standardizingArea(ds_3);
-	writeDataToExcel(ds_4, outFile + ".xls");
+	if (writeDataToExcel(ds_4, outFile) == true) {
+		cout << "Done!" << endl;
+	}
+	else {
+		cout << "Can not save file!" << endl;
+	}
 	//hiện tại chưa tìm được thư viện hỗ trợ ghi excel nên lưu tạm bằng xls
 	//lưu bằng xlsx thì sẽ mở không được
-	cout << "Done!" << endl;
 	system("pause");
 	return 0;
 }
@@ -214,7 +219,8 @@ vector<ThuocTinh> loadTextFile(string path) {
 
 	ifstream file(path);
 	string str;
-	int country = -1;
+	int country = 0;
+	int i = 0;
 	while (getline(file, str))
 	{
 		int equalSymbolPosition = str.find('=');
@@ -261,18 +267,34 @@ bool fileExists(string fileName) {
 	return false;
 }
 
-void writeDataToExcel(vector<ThuocTinh> dsThuocTinh, std::string outputFile)
+bool writeDataToExcel(vector<ThuocTinh> dsThuocTinh, std::string outputFile)
 {
-	ofstream newFile(outputFile);
-	for (int i = 0; i < dsThuocTinh.size(); i++) {
-		newFile << dsThuocTinh[i].ten << "\t";
-	}
-	newFile << "\n";
-	for (int i = 0; i < dsThuocTinh[0].data.size(); i++) {
-		for (int j = 0; j < dsThuocTinh.size(); j++) {
-			newFile << dsThuocTinh[j].data[i] << "\t";
+	lxw_workbook  *workbook = workbook_new(outputFile.c_str());
+
+	if (workbook == NULL)
+		return false;
+
+	lxw_worksheet *worksheet = workbook_add_worksheet(workbook, NULL);
+
+	if (worksheet == NULL)
+		return false;
+
+	// Duyet qua tat ca cac thuoc tinh
+	for (uint16_t col = 0; col < dsThuocTinh.size(); col++)
+	{
+		// Dong dau tien la ten thuoc tinh
+		worksheet_write_string(worksheet, 0, col, dsThuocTinh[col].ten.c_str(), NULL);
+
+		// Ghi tat ca cac dong du lieu trong thuoc tinh 
+
+		for (uint16_t row = 0; row < dsThuocTinh[col].data.size(); row++)
+		{
+			// Ghi du lieu vao cell, bo qua dong header
+			worksheet_write_string(worksheet, row + 1, col, dsThuocTinh[col].data[row].c_str(), NULL);
 		}
-		newFile << "\n";
 	}
-	newFile.close();
+
+	workbook_close(workbook);
+
+	return true;
 }
