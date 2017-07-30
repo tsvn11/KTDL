@@ -8,8 +8,10 @@
 
 using namespace NumberDuck;
 
+vector<string> splitProperty(string str);
 vector<ThuocTinh> removeProperty(vector<ThuocTinh> propList, vector<string> removeList); //câu a
 bool isDouble(string str);
+inline bool isInteger(const std::string & s);
 double stringToDouble(string str);
 string doubleToString(double dbl);
 bool checkBeforeBinning(ThuocTinh prop);
@@ -21,13 +23,13 @@ vector<vector<ThuocTinh>> equalWidthBinning(vector<ThuocTinh> propList, vector<s
 vector<vector<ThuocTinh>> equalDepthBinning(vector<ThuocTinh> propList, vector<string> processedList, int depth); //câu e
 vector<ThuocTinh> removeMissingInstance(vector<ThuocTinh> propList, vector<string> removeList); //câu f
 
-vector<ThuocTinh> readDataFromExcel(std::string inputFile); 
+vector<ThuocTinh> readDataFromExcel(std::string inputFile);
 void writeDataToExcel(vector<ThuocTinh> dsThuocTinh, std::string outputFile);
 
 // When passing char arrays as parameters they must be pointers
 int main(int argc, char* argv[]) {
-    if (argc < 7) { // Check the value of argc. If not enough parameters have been passed, inform user and exit.
-		// Inform the user of how to use the program
+	if (argc < 7) { // Check the value of argc. If not enough parameters have been passed, inform user and exit.
+					// Inform the user of how to use the program
 		std::cout << "Usage is --in <infile> --out <outdir> --task <a|b|c|d|e|f> --proplist <{id,name}> --bin <number>\n";
 		std::cout << "Task a: Xoa danh sach thuoc tinh\n";
 		std::cout << "Task b: Chuan hoa min-max\n";
@@ -35,32 +37,67 @@ int main(int argc, char* argv[]) {
 		std::cout << "Task d: Chia gio theo do rong\n";
 		std::cout << "Task e: Chia gio theo do sau\n";
 		std::cout << "Task f: Xoa mau du lieu thieu\n";
-        std::cin.get();
-        exit(0);
-    } else { // if we got enough parameters...
+		std::cin.get();
+		exit(0);
+	}
+	else { // if we got enough parameters...
 		std::string inFile, outFile, taskName, proplist, bin;
-        std::cout << argv[0];
-        for (int i = 1; i < argc; i++) { /* We will iterate over argv[] to get the parameters stored inside.
-                                          * Note that we're starting on 1 because we don't need to know the 
-                                          * path of the program, which is stored in argv[0] */
-            if (i + 1 != argc) // Check that we haven't finished parsing already
+		std::cout << argv[0];
+		for (int i = 1; i < argc; i++) { /* We will iterate over argv[] to get the parameters stored inside.
+										 * Note that we're starting on 1 because we don't need to know the
+										 * path of the program, which is stored in argv[0] */
+			if (i + 1 != argc) // Check that we haven't finished parsing already
 				if (strcmp(argv[i], "--in") == 0) {
-                    // We know the next argument *should* be the filename:
-                    inFile = argv[i + 1];
-                } else if (strcmp(argv[i], "--out") == 0) {
-                    outFile = argv[i + 1];
-                } else if (strcmp(argv[i], "--task") == 0) {
-                    taskName = argv[i + 1];
-				} else if (strcmp(argv[i], "--proplist") == 0) {
+					// We know the next argument *should* be the filename:
+					inFile = argv[i + 1];
+				}
+				else if (strcmp(argv[i], "--out") == 0) {
+					outFile = argv[i + 1];
+				}
+				else if (strcmp(argv[i], "--task") == 0) {
+					taskName = argv[i + 1];
+				}
+				else if (strcmp(argv[i], "--proplist") == 0) {
 					proplist = argv[i + 1];
-				} else if (strcmp(argv[i], "--bin") == 0) {
+				}
+				else if (strcmp(argv[i], "--bin") == 0) {
 					bin = argv[i + 1];
-            }
-            std::cout << argv[i] << " ";
-        }
+				}
+				std::cout << argv[i] << " ";
+		}
 
-        //... some more code
-		
+		//chức năng nào cũng cần propList, propList rỗng chức năng sẽ không thể thực hiện
+		//biến processedList sẽ lưu danh sách thuộc tính người dùng nhập vào
+		size_t start = proplist.find('{');
+		size_t end = proplist.find('}');
+		if (start == string::npos || end == string::npos || proplist.find(' ') != string::npos) {
+			cout << endl << "Cau truc proplist khong dung." << endl;
+			cin.get();
+			exit(0);
+		}
+		if (end - start == 1) {
+			cout << "Proplist rong." << endl;
+			cin.get();
+			exit(0);
+		}
+		vector<string> processedList = splitProperty(proplist);
+		int number = 0;
+		//chức năng d, e cần number (số giỏ, độ sâu) để thực hiện
+		//biến number sẽ lưu số nguyên người dùng nhập vào
+		if (taskName.compare("d") == 0 || taskName.compare("e") == 0) {
+			if (isInteger(bin) == false) {
+				cout << "Gia tri sau --bin phai la mot so nguyen > 0." << endl;
+				cin.get();
+				exit(0);
+			}
+			number = (int)stringToDouble(bin);
+			if (number <= 0) {
+				cout << "Gia tri sau --bin phai la mot so nguyen > 0." << endl;
+				cin.get();
+				exit(0);
+			}
+		}
+
 		/* Read input file */
 
 
@@ -92,7 +129,7 @@ int main(int argc, char* argv[]) {
 		else
 		{
 			std::cout << "Not enough or invalid arguments, please try again.\n";
-			Sleep(2000); 
+			Sleep(2000);
 			exit(0);
 		}
 
@@ -100,12 +137,30 @@ int main(int argc, char* argv[]) {
 		/* Write output file */
 
 
-        std::cin.get();
-        return 0;
-    }
+		std::cin.get();
+		return 0;
+	}
 }
 
 //----------------------------------------------------------------------
+vector<string> splitProperty(string str) {
+	string s = str.substr(1, str.length() - 2); //loại 2 dấu {}
+	vector<string> result;
+	while (true) {
+		int comma = s.find(',');
+		if (comma == string::npos) { //không có dấu ',' => chỉ còn 1 thuộc tính
+			result.push_back(s);
+			break;
+		}
+		else {
+			string propName = s.substr(0, comma);
+			result.push_back(propName);
+			s = s.substr(propName.length() + 1, s.length() - propName.length());
+		}
+	}
+	return result;
+}
+
 vector<ThuocTinh> removeProperty(vector<ThuocTinh> propList, vector<string> removeList) {
 	vector<ThuocTinh> propList_2 = propList;
 	for (int i = 0; i < removeList.size(); i++) {
@@ -129,6 +184,17 @@ bool isDouble(string str)
 	if (*endptr != '\0' || endptr == str)
 		return false;
 	return true;
+}
+
+//hàm kiểm tra xem string có parse sang integer được hay không
+inline bool isInteger(const std::string & s)
+{
+	if (s.empty() || ((!isdigit(s[0])) && (s[0] != '-') && (s[0] != '+'))) return false;
+
+	char * p;
+	strtol(s.c_str(), &p, 10);
+
+	return (*p == 0);
 }
 
 //hàm parse string sang double
@@ -429,12 +495,12 @@ vector<ThuocTinh> readDataFromExcel(std::string inputFile)
 
 		// Doc tat ca cac ten thuoc tinh,
 		// Neu co 3 ten thuoc tinh rong lien tiep => da doc het thuoc tinh => dung lai
-		while (thuoctinhrong < 3)  
+		while (thuoctinhrong < 3)
 		{
 			// Lay ten thuoc tinh
 			Cell* pCell_Header = pWorksheet->GetCell(0, col);
 			std::string tenThuocTinh(pCell_Header->GetString());
-			
+
 			// Neu co 3 ten thuoc tinh rong lien tiep => da doc het thuoc tinh => dung lai
 			if (tenThuocTinh.empty())
 			{
@@ -448,12 +514,12 @@ vector<ThuocTinh> readDataFromExcel(std::string inputFile)
 			ThuocTinh thuoctinh;
 			thuoctinh.ten = tenThuocTinh; // Luu ten thuoc tinh
 
-			// Bien dem du lieu rong lien tiep
+										  // Bien dem du lieu rong lien tiep
 			int dulieurong = 0;
 			uint16_t row = 1;  // bo qua dong dau tien
 
-			// Doc tat ca du lieu cua thuoc tinh
-			// Neu co 20 du lieu rong lien tiep => da doc het du lieu => dung lai
+							   // Doc tat ca du lieu cua thuoc tinh
+							   // Neu co 20 du lieu rong lien tiep => da doc het du lieu => dung lai
 			while (dulieurong < 20)
 			{
 				// Lay du lieu
@@ -471,7 +537,7 @@ vector<ThuocTinh> readDataFromExcel(std::string inputFile)
 				dulieurong = 0;
 
 				// Luu du lieu
-				thuoctinh.data.push_back(dulieu); 
+				thuoctinh.data.push_back(dulieu);
 
 				row++;
 			}
@@ -491,7 +557,7 @@ void writeDataToExcel(vector<ThuocTinh> dsThuocTinh, std::string outputFile)
 	Workbook workbook("");
 	Worksheet* pWorksheet = workbook.GetWorksheetByIndex(0); // chon sheet dau tien
 
-	// Duyet qua tat ca cac thuoc tinh
+															 // Duyet qua tat ca cac thuoc tinh
 	for (uint16_t col = 0; col < dsThuocTinh.size(); col++)
 	{
 		// Dong dau tien la ten thuoc tinh
@@ -499,7 +565,7 @@ void writeDataToExcel(vector<ThuocTinh> dsThuocTinh, std::string outputFile)
 		pCell_Header->SetString(dsThuocTinh[col].ten.c_str());
 
 		// Ghi tat ca cac dong du lieu trong thuoc tinh 
-		for (uint16_t row = 0; row < dsThuocTinh[col].data.size(); col++) 
+		for (uint16_t row = 0; row < dsThuocTinh[col].data.size(); col++)
 		{
 			// Ghi du lieu vao cell
 			Cell* pCell = pWorksheet->GetCell(row + 1, col); // bo qua dong dau tien chua ten thuoc tinh
