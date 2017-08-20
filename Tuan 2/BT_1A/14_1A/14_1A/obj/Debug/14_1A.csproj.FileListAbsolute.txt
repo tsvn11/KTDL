@@ -1,0 +1,5 @@
+D:\Hoc Tap Tren Lop\HC HK2\KTDL&UD\Thuc hanh\tuan 2\14_1A\14_1A\bin\Debug\14_1A.exe
+D:\Hoc Tap Tren Lop\HC HK2\KTDL&UD\Thuc hanh\tuan 2\14_1A\14_1A\bin\Debug\14_1A.pdb
+D:\Hoc Tap Tren Lop\HC HK2\KTDL&UD\Thuc hanh\tuan 2\14_1A\14_1A\obj\Debug\14_1A.csprojResolveAssemblyReference.cache
+D:\Hoc Tap Tren Lop\HC HK2\KTDL&UD\Thuc hanh\tuan 2\14_1A\14_1A\obj\Debug\14_1A.exe
+D:\Hoc Tap Tren Lop\HC HK2\KTDL&UD\Thuc hanh\tuan 2\14_1A\14_1A\obj\Debug\14_1A.pdb
