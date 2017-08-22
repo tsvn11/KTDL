@@ -42,6 +42,28 @@ namespace _14_1A
                 return data;
             }
         }
+		
+        public static List<Row> readCSV2(string path)
+        {
+            using (var reader = new StreamReader(path))
+            {
+                List<Row> data = new List<Row>();
+                while (!reader.EndOfStream)
+                {
+                    string line = reader.ReadLine();
+                    string[] values = line.Split(',');
+
+                    Row row = new Row();
+
+                    foreach (string value in values)
+                    {
+                        row.value.Add(value);
+                    }
+                    data.Add(row);
+                }
+                return data;
+            }
+        }
 
         public static bool checkInput(string[] parameter)
         {

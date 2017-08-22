@@ -21,4 +21,14 @@ namespace _14_1A
         public string name;
         public List<bool> value;
     }
+
+    public class Row
+    {
+        public Row()
+        {
+            value = new List<string>();
+        }
+
+        public List<string> value;
+    }
 }

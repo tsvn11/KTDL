@@ -41,11 +41,17 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="Algorithm\FPGrowth.cs" />
+    <Compile Include="Algorithm\FPTree.cs" />
+    <Compile Include="Algorithm\Item.cs" />
+    <Compile Include="Algorithm\ItemSet.cs" />
+    <Compile Include="Algorithm\Node.cs" />
     <Compile Include="MyFunction.cs" />
     <Compile Include="Struct.cs" />
     <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>
+  <ItemGroup />
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
        Other similar extension points exist, see Microsoft.Common.targets.
