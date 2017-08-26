@@ -22,14 +22,13 @@ namespace _14_1A
             float minsup = float.Parse(args[3]);
             float minconf = float.Parse(args[4]);
 
-            List<Column> InputData = MyFunction.readCSV(input);
-            MyFunction.printColumnList(InputData);
+            List<Column> OriginalInputData = MyFunction.readCSV(input);
+            List<Row> InputData = MyFunction.convertToRowList(OriginalInputData);
 
-			//List<Row> InputData = MyFunction.readCSV2(input);
-            //FPGrowth fpGrowth = new FPGrowth();
-            //fpGrowth.CreateFPTreeAndGenerateFrequentItemsets(InputData, minsup);
+            FPGrowth fpGrowth = new FPGrowth();
+            fpGrowth.CreateFPTreeAndGenerateFrequentItemsets(InputData, minsup);
             
-            Console.WriteLine("Press any key to exit...");
+            Console.WriteLine("\n[Done] Press any key to exit...");
             Console.ReadKey();
             return;
         }

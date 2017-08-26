@@ -56,6 +56,15 @@ namespace _14_1A
                         return aTransaction.Exists(x => x==anItem.Symbol);
                     }
                 );
+
+            //print to test
+            //Console.Write("\nRow: ");
+            //for (int i = 0; i < items.Count; i++)
+            //{
+            //    Console.Write("[" + items[i].Symbol + "]");
+            //}
+            //Console.WriteLine();
+
             Node tempRoot = root;
             Node tempNode;
             foreach(Item anItem in items)
@@ -232,6 +241,39 @@ namespace _14_1A
                 }
             );
             return tree;
+        }
+
+        //test
+        public void Print()
+        {
+            Console.WriteLine("\n----- FP Tree ----- ");
+            Console.WriteLine("[NodeName: Root] " + root.Children.Count + " children");
+            foreach (Node childNode in root.Children)
+            {
+                Print(childNode);
+            }
+            Console.WriteLine("-----EndFPTree----- ");
+        }
+
+        //test
+        public void Print(Node node)
+        {
+            if (node == null)
+                return;
+            string info = "";
+            if(node.Parent.Symbol.CompareTo("") == 0)
+            {
+                info = string.Format("[NodeName: {0}][NodeParent: Root][FPCount: {1}]", node.Symbol, node.FpCount);
+            }
+            else
+            {
+                info = string.Format("[NodeName: {0}][NodeParent: {1}][NodeParentFPCount: {2}][FPCount: {3}]", node.Symbol, node.Parent.Symbol, node.Parent.FpCount, node.FpCount);
+            }
+            Console.Out.WriteLine(info);
+            foreach(Node childNode in node.Children){
+                Print(childNode);
+            }
+
         }
 
     }

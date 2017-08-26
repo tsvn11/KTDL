@@ -22,7 +22,7 @@ namespace _14_1A
                     {
                         for (int i = 0; i < values.Length; i++)
                         {
-                            Column col = new Column(values[i]);
+                            Column col = new Column(values[i].Trim());
                             data.Add(col);
                         }
 
@@ -42,27 +42,23 @@ namespace _14_1A
                 return data;
             }
         }
-		
-        public static List<Row> readCSV2(string path)
+
+        public static List<Row> convertToRowList(List<Column> col)
         {
-            using (var reader = new StreamReader(path))
+            List<Row> data = new List<Row>();
+            for(int r = 0; r < col[0].value.Count; r++)
             {
-                List<Row> data = new List<Row>();
-                while (!reader.EndOfStream)
+                Row row = new Row();
+                for(int c = 0; c < col.Count; c++)
                 {
-                    string line = reader.ReadLine();
-                    string[] values = line.Split(',');
-
-                    Row row = new Row();
-
-                    foreach (string value in values)
+                    if (col[c].value[r])
                     {
-                        row.value.Add(value);
+                        row.value.Add(col[c].name);
                     }
-                    data.Add(row);
                 }
-                return data;
+                data.Add(row);
             }
+            return data;
         }
 
         public static bool checkInput(string[] parameter)
@@ -112,5 +108,18 @@ namespace _14_1A
                 Console.WriteLine();
             }
         }
+
+        public static void printRowList(List<Row> data)
+        {
+            for (int r = 0; r < data.Count; r++)
+            {
+                for (int c = 0; c < data[r].value.Count; c++)
+                {
+                    Console.Write("[ " + data[r].value[c] + " ]");
+                }
+                Console.WriteLine();
+            }
+        }
+
     }
 }

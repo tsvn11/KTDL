@@ -53,6 +53,7 @@ namespace _14_1A
             var watch = System.Diagnostics.Stopwatch.StartNew();
             FPTree _fpTree = new FPTree(inputData, minSup);
             fpTree = _fpTree;
+            _fpTree.Print(); //test
             int totalFrequentItemSets = GenerateFrequentItemSets();
             watch.Stop();
            
