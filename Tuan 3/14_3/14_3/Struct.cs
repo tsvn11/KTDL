@@ -26,13 +26,13 @@ namespace _14_3
             public string Name { get; set; }
             public List<string> Data { get; set; }
         }
-        public class Label
+        public class LabelEx
         {
-            public Label()
+            public LabelEx()
             {
                 Class = new List<Classification>();
             }
-            public Label(string Name, int Count)
+            public LabelEx(string Name, int Count)
                 :this()
             {
                 this.Name = Name;

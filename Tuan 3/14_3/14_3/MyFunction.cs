@@ -4,6 +4,9 @@ using Excel = Microsoft.Office.Interop.Excel;
 using System.IO;
 using static _14_3.Struct;
 using System.Xml.Serialization;
+using TreeGenerator;
+using System.Drawing;
+using System.Windows.Forms;
 
 namespace _14_3
 {
@@ -280,7 +283,7 @@ namespace _14_3
             addLogRecord(data); ///
 
             //check if node is leaf
-            List<Label> ClassList = detachData(null, data[data.Count - 1].Data);
+            List<LabelEx> ClassList = detachData(null, data[data.Count - 1].Data);
             if (ClassList.Count == 1)
             {                
                 node.isLeaf = true;
@@ -328,8 +331,8 @@ namespace _14_3
             node.isLeaf = false;
             node.PropertyName = data[maxIGColumnIndex].Name;
             LogRecord.Add(string.Format("Best attribute: [{0}]", node.PropertyName)); ///
-            List<Label> branchList = detachData(null, new List<string>(data[maxIGColumnIndex].Data));
-            foreach(Label branch in branchList)
+            List<LabelEx> branchList = detachData(null, new List<string>(data[maxIGColumnIndex].Data));
+            foreach(LabelEx branch in branchList)
             {
                 LogRecord.Add(""); ///
                 LogRecord.Add(string.Format("[{0}] : ({1})", node.PropertyName, branch.Name)); ///
@@ -363,9 +366,9 @@ namespace _14_3
         public static double calInfo_D(List<string> Class)
         {
             double n = Class.Count;
-            List<Label> labelList = detachData(null, Class);
+            List<LabelEx> labelList = detachData(null, Class);
             double IF = 0;
-            foreach(Label lb in labelList)
+            foreach(LabelEx lb in labelList)
             {
                 IF += (lb.Count / n) * Math.Log(lb.Count / n, 2);
             }
@@ -375,9 +378,9 @@ namespace _14_3
         public static double calInfo_A(List<string> Class, List<string> Value)
         {
             double n = Class.Count;
-            List<Label> labelList = detachData(Class, Value);
+            List<LabelEx> labelList = detachData(Class, Value);
             double IF = 0;
-            foreach(Label lb in labelList)
+            foreach(LabelEx lb in labelList)
             {
                 double n_2 = lb.Count;
                 double temp = 0;
@@ -389,9 +392,9 @@ namespace _14_3
             return IF;
         }
 
-        public static List<Label> detachData(List<string> Class, List<string> Value)
+        public static List<LabelEx> detachData(List<string> Class, List<string> Value)
         {
-            List<Label> list = new List<Label>();
+            List<LabelEx> list = new List<LabelEx>();
             for(int r = 0; r < Value.Count; r++)
             {
                 string str = Value[r];
@@ -425,7 +428,7 @@ namespace _14_3
                 }
                 if (existed_1 == false)
                 {
-                    Label newLabel = new Label(str, 1);
+                    LabelEx newLabel = new LabelEx(str, 1);
                     if(Class != null)
                     {
                         newLabel.Class.Add(new Classification(Class[r], 1));
@@ -521,10 +524,61 @@ namespace _14_3
         public static void visualize(string model, string output)
         {
             Node root = readId3(model);
-            
 
+            GetTreeData(root);
 
+            myTree = new TreeBuilder(dt);
 
+            myTree.VerticalSpace = 50;
+            myTree.HorizontalSpace = 50;
+
+            drawImage(output);
+        }
+
+        static TreeBuilder myTree = null;
+        static TreeData.TreeDataTableDataTable dt = null;
+        static int nodeID;
+
+        private static void GetTreeData(Node node)
+        {
+            dt = new TreeData.TreeDataTableDataTable();
+            nodeID = 1;
+
+            inputTree(node, 0);
+        }
+
+        public static void inputTree(Node root, int parentNodeID)
+        {
+            //Console.WriteLine("Property: [{0}], isLeaf: [{1}], ParentBranch: [{2}],  NumberOfChildren: [{3}]",
+            //root.PropertyName, root.isLeaf, root.ParentBranchName, root.Children.Count);
+
+            if (root.ParentBranchName == null)
+                root.ParentBranchName = "";
+
+            if (root.PropertyName == null)
+                root.PropertyName = "";
+
+            dt.AddTreeDataTableRow(nodeID.ToString(),
+                parentNodeID == 0 ? "" : parentNodeID.ToString(), root.ParentBranchName, "\n" + root.PropertyName);
+
+            parentNodeID = nodeID;
+
+            nodeID++;
+
+            foreach (Node child in root.Children)
+            {
+                inputTree(child, parentNodeID);
+            }
+        }
+
+        public static void drawImage(string output)
+        {
+            System.Windows.Forms.PictureBox picTree;
+            picTree = new System.Windows.Forms.PictureBox();
+            picTree.Image = Image.FromStream(myTree.GenerateTree(-1, -1, "1", System.Drawing.Imaging.ImageFormat.Bmp));
+
+            // @"E:\Git\KTDL\Tuan 3\14_3\14_3\bin\Debug\1.jpg"
+            picTree.Image.Save(output, System.Drawing.Imaging.ImageFormat.Jpeg);
         }
     }
 }
