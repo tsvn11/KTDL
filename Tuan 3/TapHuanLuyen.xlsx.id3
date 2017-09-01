@@ -1,0 +1,52 @@
+<?xml version="1.0"?>
+<Node xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+  <isLeaf>false</isLeaf>
+  <PropertyName>age</PropertyName>
+  <Children>
+    <Node>
+      <isLeaf>false</isLeaf>
+      <PropertyName>student</PropertyName>
+      <ParentBranchName>&lt;=30</ParentBranchName>
+      <Children>
+        <Node>
+          <isLeaf>true</isLeaf>
+          <PropertyName>no</PropertyName>
+          <ParentBranchName>no</ParentBranchName>
+          <Children />
+        </Node>
+        <Node>
+          <isLeaf>true</isLeaf>
+          <PropertyName>yes</PropertyName>
+          <ParentBranchName>yes</ParentBranchName>
+          <Children />
+        </Node>
+      </Children>
+    </Node>
+    <Node>
+      <isLeaf>true</isLeaf>
+      <PropertyName>yes</PropertyName>
+      <ParentBranchName>31…40</ParentBranchName>
+      <Children />
+    </Node>
+    <Node>
+      <isLeaf>false</isLeaf>
+      <PropertyName>credit_rating</PropertyName>
+      <ParentBranchName>&gt;40</ParentBranchName>
+      <Children>
+        <Node>
+          <isLeaf>true</isLeaf>
+          <PropertyName>yes</PropertyName>
+          <ParentBranchName>fair</ParentBranchName>
+          <Children />
+        </Node>
+        <Node>
+          <isLeaf>true</isLeaf>
+          <PropertyName>no</PropertyName>
+          <ParentBranchName>excellent</ParentBranchName>
+          <Children />
+        </Node>
+      </Children>
+    </Node>
+  </Children>
+  <ClassificationAttributeName>buys_computer</ClassificationAttributeName>
+</Node>
